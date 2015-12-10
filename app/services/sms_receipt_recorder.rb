@@ -1,8 +1,8 @@
 class SMSReceiptRecorder < SMSResponder
   def intent
-    if ["yes", "y", "got it", "ok", "okay"].include? message.downcase
+    if ["yes", "y", "got it", "ok", "okay"].include? normalized_message
       :approve
-    elsif ["no", "n", "flag"].include? message.downcase
+    elsif ["no", "n", "flag"].include? normalized_message
       :flag
     end
   end
@@ -18,16 +18,20 @@ class SMSReceiptRecorder < SMSResponder
     end
 
     if intent == :flag
-      message = response_message "flagged"
+      response = response_message "flagged"
       outstanding_response.flag!
     elsif intent == :approve
-      message = response_message "received"
+      response = response_message "received"
       outstanding_response.mark_received! by: user
     end
-    send_response message
+    send_response response
   end
 
 private
+
+  def normalized_message
+    message.downcase.strip
+  end
 
   def outstanding_response
     @_outstanding_reminder ||= user.receipt_reminders.latest.try(:response)
